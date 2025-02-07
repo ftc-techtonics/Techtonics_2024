@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode.GoBuilda;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 
@@ -12,8 +13,7 @@ import org.firstinspires.ftc.teamcode.Robot.TT_RobotHardware;
 import java.util.Locale;
 
 @Autonomous(name="Pinpoint Navigation Example", group="Pinpoint")
-//@Disabled
-
+@Disabled
 public class GoBuildaDriveToPointExample extends LinearOpMode {
     TT_RobotHardware robot = new TT_RobotHardware(this);
 

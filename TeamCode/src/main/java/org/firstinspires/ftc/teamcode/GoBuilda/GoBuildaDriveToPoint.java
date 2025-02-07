@@ -37,16 +37,21 @@ public class GoBuildaDriveToPoint {
         IN_BOUNDS
     }
 
-    public static double xyTolerance = 25; //20;
-    public double yawTolerance = 0.04; //0.0349066;
+    public InBounds inbounds = InBounds.NOT_IN_BOUNDS;
+    public double hOutput = 0;
+    public static double xyTolerance = 30; //20;
+    public double yawTolerance = 0.08; //0.0349066;
+    public double currentRadians = 0;
+    public double targetRadians = 0;
 
-    private static double pGain = 0.008;
+    private static double pGain = 0.0043;
     private static double dGain = 0.00001;
     private static double accel = 8.0;
 
-    public static double yawPGain = 5.0;
+    public double yawPGain = 5.0;
     public static double yawDGain = 0.0;
-    public static double yawAccel = 15;// 20.0;
+    public double yawAccel = 3;//20.0;
+    public double hError = 0;
 
     private double leftFrontMotorOutput = 0;
     private double rightFrontMotorOutput = 0;
@@ -57,24 +62,14 @@ public class GoBuildaDriveToPoint {
     private final ElapsedTime holdTimer = new ElapsedTime();
     private final ElapsedTime PIDTimer = new ElapsedTime();
 
-    private LinearOpMode myOpMode; //todo: consider if this is required
-
     private final PIDLoop xPID = new PIDLoop();
     private final PIDLoop yPID = new PIDLoop();
     private final PIDLoop hPID = new PIDLoop();
-
-    //private final PIDLoop xTankPID = new PIDLoop();
-
-    //private DriveType selectedDriveType = DriveType.MECANUM;
+    private LinearOpMode myOpMode;
 
     public GoBuildaDriveToPoint(LinearOpMode opmode) {
         myOpMode = opmode;
     }
-
-    //public void setDriveType(DriveType driveType) {
-    // selectedDriveType = driveType;
-    //}
-
 
     public void setXYCoefficients(double p, double d, double acceleration, DistanceUnit unit, double tolerance) {
         pGain = p;
@@ -107,7 +102,7 @@ public class GoBuildaDriveToPoint {
 
         double xPWR = calculatePID(currentPosition, targetPosition, Direction.x);
         double yPWR = calculatePID(currentPosition, targetPosition, Direction.y);
-        double hOutput = calculatePID(currentPosition, targetPosition, Direction.h);
+        hOutput = calculatePID(currentPosition, targetPosition, Direction.h);
 
         double heading = currentPosition.getHeading(AngleUnit.RADIANS);
         double cosine = Math.cos(heading);
@@ -116,15 +111,20 @@ public class GoBuildaDriveToPoint {
         double xOutput = (xPWR * cosine) + (yPWR * sine);
         double yOutput = (xPWR * sine) - (yPWR * cosine);
 
+        inbounds = inBounds(currentPosition, targetPosition);
+        //if (inbounds == InBounds.IN_BOUNDS) {
+        //    hOutput = 0;
+        //}
+
+
         calculateMecanumOutput(xOutput * power, yOutput * power, hOutput * power);
 
-        if (inBounds(currentPosition, targetPosition) == InBounds.IN_BOUNDS) {
+        if (inbounds == InBounds.IN_BOUNDS) {
             atTarget = true;
         } else {
             holdTimer.reset();
             atTarget = false;
         }
-
         if (atTarget && holdTimer.time() > holdTime) {
             return true;
         }
@@ -164,15 +164,8 @@ public class GoBuildaDriveToPoint {
             return yPID.calculateAxisPID(yError, pGain, dGain, accel, PIDTimer.seconds());
         }
         if (direction == Direction.h) {
-            //double hError = (targetPosition.getHeading(AngleUnit.RADIANS) ) - (currentPosition.getHeading(AngleUnit.RADIANS) );
-            double hError;
-            hError = targetPosition.getHeading(AngleUnit.RADIANS) - currentPosition.getHeading(AngleUnit.RADIANS);
-            if (hError < -Math.PI) {
-                hError += Math.PI * 2;
-            } else if (hError > Math.PI) {
-                hError -= Math.PI * 2;
-            }
-            return hPID.calculateAxisPID(hError, yawPGain, yawDGain, yawAccel, PIDTimer.seconds());
+            hError = calculateHError(targetPosition.getHeading(AngleUnit.RADIANS), currentPosition.getHeading(AngleUnit.RADIANS));
+            return hPID.calculateTurnPID(hError, yawPGain, yawDGain, yawAccel, PIDTimer.seconds());
         }
         return 0;
     }
@@ -180,12 +173,6 @@ public class GoBuildaDriveToPoint {
     private InBounds inBounds(Pose2D currPose, Pose2D trgtPose) {
         boolean xInBounds = currPose.getX(MM) > (trgtPose.getX(MM) - xyTolerance) && currPose.getX(MM) < (trgtPose.getX(MM) + xyTolerance);
         boolean yInBounds = currPose.getY(MM) > (trgtPose.getY(MM) - xyTolerance) && currPose.getY(MM) < (trgtPose.getY(MM) + xyTolerance);
-        double hError = trgtPose.getHeading(AngleUnit.RADIANS) - currPose.getHeading(AngleUnit.RADIANS);
-        if (hError < -Math.PI) {
-            hError += Math.PI * 2;
-        } else if (hError > Math.PI) {
-            hError -= Math.PI * 2;
-        }
         boolean hInBounds = (Math.abs(hError) < yawTolerance);
 
         if (xInBounds && yInBounds && hInBounds) {
@@ -194,8 +181,23 @@ public class GoBuildaDriveToPoint {
             return InBounds.IN_X_Y;
         } else if (hInBounds) {
             return InBounds.IN_HEADING;
-        } else
+        } else {
             return InBounds.NOT_IN_BOUNDS;
+        }
+    }
+
+    private double calculateHError(double targetRadiansPARM, double currentRadiansPARM) {
+        currentRadians = currentRadiansPARM;
+        targetRadians = targetRadiansPARM;
+        double error = targetRadians - currentRadians;
+        //=IF((C29-D29)>180,-(360-(C29-D29)),(C29-D29))
+        //=IF((C29-D29)<-180,(360+(C29-D29)),(C29-D29))
+        if (error < -Math.PI) {
+            error = ((2 * Math.PI) + error);
+        } else if (error > Math.PI) {
+            error = -((2 * Math.PI) - error);
+        }
+        return error;
     }
 
     public double calculateTargetHeading(Pose2D currPose, Pose2D trgtPose) {
@@ -218,10 +220,36 @@ class PIDLoop {
 
     private double errorR;
 
+    public double calculateTurnPID(double error, double pGain, double dGain, double accel, double currentTime) {
+        previousError = Math.abs(error);
+        if (Math.abs(error) < (Math.PI / 90)) {
+            return 0;
+        } else if (Math.abs(error) < (Math.PI / 90) * 20) {
+            return 0.2 * (previousError/error) ;
+        } else {
+            return calculateAxisPID(error,pGain,dGain,accel,currentTime);
+            //return error * accel;
+        }
+    }
+
     public double calculateAxisPID(double error, double pGain, double dGain, double accel, double currentTime) {
         double p = error * pGain;
         double cycleTime = currentTime - previousTime;
-        double d = dGain * (previousError - error) / (cycleTime);
+        double errorDelta = (previousError - error);
+
+        errorDelta = Math.abs(previousError) - Math.abs(error);
+        if (error < 1) {
+            errorDelta *= -1;
+        }
+                /*
+        if (previousError > 0 && error < 0) {
+            errorDelta = previousError + error;
+        } else if (previousError < 0 && error > 0) {
+            errorDelta = previousError + error;
+        }
+                 */
+
+        double d = dGain * errorDelta / (cycleTime);
         double output = p + d;
         double dV = cycleTime * accel;
 
@@ -244,5 +272,4 @@ class PIDLoop {
 
         return output;
     }
-
 }

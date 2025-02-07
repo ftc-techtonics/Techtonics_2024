@@ -10,7 +10,7 @@ import org.firstinspires.ftc.teamcode.Robot.TT_RobotHardware;
 
 import java.util.Locale;
 
-@Autonomous(name = "Left Side Auto", group = "Techtonics")
+@Autonomous(name = "Auto: Left Side", group = "Techtonics")
 
 public class TT_AutonomousLeftSide extends LinearOpMode {
     TT_RobotHardware robot = new TT_RobotHardware(this);
@@ -28,19 +28,21 @@ public class TT_AutonomousLeftSide extends LinearOpMode {
         DRIVE_TO_BLOCK_1,
         DRIVE_TO_BLOCK_2,
         DRIVE_TO_BLOCK_3,
+        DRIVE_TO_DROP_BLOCK_PREPARE,
         DRIVE_TO_DROP_BLOCK,
         DRIVE_TO_PARK_PREP,
         DRIVE_TO_PARKING,
     }
 
     // REMEMBER TO ADD 50 DISTANCE TO Y AXIS MOVING RIGHT
-    int MAX_FORWARD_POSITION = -430;
+    int MAX_FORWARD_POSITION = -580;
     final Pose2D TARGET_SPECIMEN_DROP_PREPARE = new Pose2D(DistanceUnit.MM, calcXCoordinate(-300), 0, AngleUnit.DEGREES, 0);
     final Pose2D TARGET_SPECIMEN_DROP = new Pose2D(DistanceUnit.MM, calcXCoordinate(-726), 0, AngleUnit.DEGREES, 0);
     final Pose2D TARGET_SPECIMEN_BACKUP = new Pose2D(DistanceUnit.MM, calcXCoordinate(MAX_FORWARD_POSITION), 0, AngleUnit.DEGREES, 0);
-    final Pose2D TARGET_BLOCK_1 = new Pose2D(DistanceUnit.MM, calcXCoordinate(MAX_FORWARD_POSITION), -1005, AngleUnit.DEGREES, 180);
-    final Pose2D TARGET_BLOCK_2 = new Pose2D(DistanceUnit.MM, calcXCoordinate(MAX_FORWARD_POSITION), -1275, AngleUnit.DEGREES, 180);
-    final Pose2D TARGET_BLOCK_3 = new Pose2D(DistanceUnit.MM, calcXCoordinate(-570), -1200, AngleUnit.DEGREES, 225);
+    final Pose2D TARGET_BLOCK_1 = new Pose2D(DistanceUnit.MM, calcXCoordinate(MAX_FORWARD_POSITION), -1015, AngleUnit.DEGREES, 180);
+    final Pose2D TARGET_BLOCK_2 = new Pose2D(DistanceUnit.MM, calcXCoordinate(MAX_FORWARD_POSITION), -1285, AngleUnit.DEGREES, 180);
+    final Pose2D TARGET_BLOCK_3 = new Pose2D(DistanceUnit.MM, calcXCoordinate(-610), -1225, AngleUnit.DEGREES, 225);
+    final Pose2D TARGET_DROP_BLOCK_PREPARE = new Pose2D(DistanceUnit.MM, calcXCoordinate(-300), -1100, AngleUnit.DEGREES, 225);
     final Pose2D TARGET_DROP_BLOCK = new Pose2D(DistanceUnit.MM, calcXCoordinate(-100), -1200, AngleUnit.DEGREES, 135);
     final Pose2D TARGET_PARK_PREP = new Pose2D(DistanceUnit.MM, calcXCoordinate(-1268), -1000, AngleUnit.DEGREES, 90);
     final Pose2D TARGET_50 = new Pose2D(DistanceUnit.MM, calcXCoordinate(-1268), -370, AngleUnit.DEGREES, 90);
@@ -56,6 +58,7 @@ public class TT_AutonomousLeftSide extends LinearOpMode {
         waitForStart();
         resetRuntime();
 
+        robot.extensionArm.setTargetPosition(robot.EXT_ArmMidHeight);
         while (opModeIsActive()) {
             robot.odo.update();
 
@@ -103,16 +106,26 @@ public class TT_AutonomousLeftSide extends LinearOpMode {
                     }
                     break;
                 case DRIVE_TO_BLOCK_3:
-                    autonomousPower = .3;
+                    autonomousPower = .5;
                     robot.extensionSpin.setTargetPosition(.2);
                     if (driveToTarget(TARGET_BLOCK_3, .5, "Position for third sample pickup")) {
                         block_3 = true;
                         pickupSample();
                         stateMachine = StateMachine.DRIVE_TO_DROP_BLOCK;
                     }
+
+                    break;
+                case DRIVE_TO_DROP_BLOCK_PREPARE:
+                    autonomousPower = .7;
+                    if (blockTransferred == false) {
+                        moveSampleToTransfer();
+                    }
+                    if (driveToTarget(TARGET_DROP_BLOCK_PREPARE, 0, "Moving to Drop Block Prepare")) {
+                        stateMachine = StateMachine.DRIVE_TO_DROP_BLOCK;
+                    }
                     break;
                 case DRIVE_TO_DROP_BLOCK:
-                    autonomousPower = 1;
+                    autonomousPower = .7;
                     if (blockTransferred == false) {
                         moveSampleToTransfer();
                     }
@@ -132,7 +145,7 @@ public class TT_AutonomousLeftSide extends LinearOpMode {
                     autonomousPower = 1;
                     robot.extension.setTargetPosition(1);
                     robot.extensionArm.setTargetPosition(robot.EXT_ArmDropHeight);
-                    robot.extensionSpin.setTargetPosition(0.5);
+                    robot.extensionSpin.setTargetPosition(robot.EXT_SpinCenter);
 
                     if (driveToTarget(TARGET_PARK_PREP, 0, "Drive to Park Prep position")) {
                         stateMachine = StateMachine.DRIVE_TO_PARKING;
@@ -171,15 +184,15 @@ public class TT_AutonomousLeftSide extends LinearOpMode {
         // Move ext arm back for dropping cube into transfer box.
         // ensure rotation of gripper is at optimal position
         robot.extensionArm.setTargetPosition(robot.EXT_ArmDropHeight);
-        robot.extensionSpin.setTargetPosition(.5);
-        robot.extension.setTargetPosition(.7);
+        robot.extensionSpin.setTargetPosition(robot.EXT_SpinCenter);
+        //robot.extension.setTargetPosition(.7);
         blockTransferred = true;
     }
 
     private void dropSample() {
         dropCount = dropCount + 1;
         // Open Gripper - Drop block into Transfer box
-        robot.extensionGripper.setTargetPosition(.5);
+        robot.extensionGripper.setTargetPosition(robot.EXT_GripperReadyToClose);
         sleep(300);
         // Lower arm to prepare for pickup and bring extension in
         // raise lift in preparation for dropping into scoring box
@@ -195,7 +208,7 @@ public class TT_AutonomousLeftSide extends LinearOpMode {
         robot.liftPowerMax = 1;
         robot.setLiftPosition(0);
         robot.extensionArm.setTargetPosition(robot.EXT_ArmPickupReadyHeight);
-        robot.extensionGripper.setTargetPosition(.5);
+        robot.extensionGripper.setTargetPosition(.4D);
         blockTransferred = false;
     }
 

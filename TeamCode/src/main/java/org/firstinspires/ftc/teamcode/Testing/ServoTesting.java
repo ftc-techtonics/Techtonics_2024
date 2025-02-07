@@ -31,6 +31,7 @@ package org.firstinspires.ftc.teamcode.Testing;
 
 import android.widget.Button;
 
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DigitalChannel;
@@ -41,10 +42,11 @@ import org.firstinspires.ftc.teamcode.Robot.ScaledServo;
 import org.firstinspires.ftc.teamcode.Robot.TT_RobotHardware;
 
 @TeleOp(name = "Servo Test", group = "Testing")
+@Disabled
 
 public class ServoTesting extends LinearOpMode {
 
-    static final double INCREMENT = 0.05;     // amount to slew servo each CYCLE_MS cycle
+    static final double INCREMENT = 0.01;     // amount to slew servo each CYCLE_MS cycle
     static final int CYCLE_MS = 50;     // period of each cycle
 
     // Define class members
@@ -93,12 +95,13 @@ public class ServoTesting extends LinearOpMode {
         //telemetry.addData("Button Pressed", "%s", button.getState());
         telemetry.addData(">", "Press Start to scan Servo.");
         telemetry.update();
+
         // Wait for the start button
         waitForStart();
 
         // Scan servo till stop pressed.
         while (opModeIsActive()) {
-            if (gamepad1.dpad_up) {
+            if (gamepad1.dpad_up || gamepad1.dpad_down) {
                 if (!dpadPressed) {
                     switch (stateMachine) {
                         case LIFT_ARM:

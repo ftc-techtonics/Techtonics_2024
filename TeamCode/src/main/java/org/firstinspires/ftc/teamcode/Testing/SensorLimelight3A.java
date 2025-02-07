@@ -36,6 +36,7 @@ import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.LLResultTypes;
 import com.qualcomm.hardware.limelightvision.LLStatus;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
@@ -76,7 +77,7 @@ public class SensorLimelight3A extends LinearOpMode {
     public void runOpMode() throws InterruptedException {
         limelight = hardwareMap.get(Limelight3A.class, "Camera");
         telemetry.setMsTransmissionInterval(11);
-        limelight.pipelineSwitch(0);
+        limelight.pipelineSwitch(1);
 
         /*
          * Starts polling for data.  If you neglect to call start(), getLatestResult() will return null.
@@ -101,8 +102,8 @@ public class SensorLimelight3A extends LinearOpMode {
                 double captureLatency = result.getCaptureLatency();
                 double targetingLatency = result.getTargetingLatency();
                 double parseLatency = result.getParseLatency();
-                //telemetry.addData("LL Latency", captureLatency + targetingLatency);
-                //telemetry.addData("Parse Latency", parseLatency);
+                telemetry.addData("LL Latency", captureLatency + targetingLatency);
+                telemetry.addData("Parse Latency", parseLatency);
                 //telemetry.addData("PythonOutput", java.util.Arrays.toString(result.getPythonOutput()));
 
                 if (result.isValid()) {
