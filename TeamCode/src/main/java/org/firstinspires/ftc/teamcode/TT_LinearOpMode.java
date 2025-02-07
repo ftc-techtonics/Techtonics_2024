@@ -16,32 +16,37 @@ public class TT_LinearOpMode extends LinearOpMode {
     static final Pose2D START_POSITION = new Pose2D(DistanceUnit.MM, 0, 0, AngleUnit.DEGREES, 0);
 
     @Override
-    public void runOpMode()  {
+    public void runOpMode() {
         robot.init();
-        robot.MaxPowerAdjustment = 1.5;
-
+        robot.MaxPowerAdjustment = 1;
         waitForStart();
-
-        //robot.extension.setTargetPosition(.9);
 
         // run until the end of the match (driver presses STOP)
         while (opModeIsActive()) {
-            if (gamepad1.dpad_left) {
-                if (robot.targetPosition != null) {
+            //if (gamepad1.dpad_left) {
+
+                /*if (robot.targetPosition != null) {
                     robot.odo.update();
                     robot.nav.driveTo(robot.odo.getPosition(), robot.targetPosition, 0.7, 3);
                     robot.setDrivePower(robot.nav.getMotorPower(GoBuildaDriveToPoint.DriveMotor.LEFT_FRONT), robot.nav.getMotorPower(GoBuildaDriveToPoint.DriveMotor.RIGHT_FRONT),
                             robot.nav.getMotorPower(GoBuildaDriveToPoint.DriveMotor.LEFT_BACK), robot.nav.getMotorPower(GoBuildaDriveToPoint.DriveMotor.RIGHT_BACK));
                 }
+
+                 */
+            //robot.autoDriveToAprilTag();
+            //} else
+            if (robot.dropSampleGestureInitatied) {
+                robot.processDropSampleGesture();
+            } else if (robot.dropSpecimanSampleGestureInitatied) {
+                robot.processDropSpecimenSampleGesture();
             } else {
-                robot.savePosition();
+                robot.savePositionAndSide();
                 robot.driveRobot();
                 robot.drivelift();
-                robot.moveLiftArm();
                 robot.moveExtension();
                 robot.moveExtensionArm();
                 robot.moveExtensionSpin();
-                //robot.moveExtensionGripper();
+                //robot.checkCamera();
             }
             robot.displayTelemetry();
         }

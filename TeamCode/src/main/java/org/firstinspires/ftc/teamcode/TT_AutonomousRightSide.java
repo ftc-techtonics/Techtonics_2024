@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
@@ -11,6 +12,7 @@ import org.firstinspires.ftc.teamcode.Robot.TT_RobotHardware;
 import java.util.Locale;
 
 @Autonomous(name = "Auto: Right Side", group = "Techtonics")
+@Disabled
 //@Disabled
 
 public class TT_AutonomousRightSide extends LinearOpMode {

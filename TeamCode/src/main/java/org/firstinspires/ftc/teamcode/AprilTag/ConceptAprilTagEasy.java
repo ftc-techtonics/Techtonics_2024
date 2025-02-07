@@ -123,7 +123,7 @@ public class ConceptAprilTagEasy extends LinearOpMode {
 
         // Create the vision portal the easy way.
         if (USE_WEBCAM) {
-            limelight = hardwareMap.get(Limelight3A.class, "Limelight 3A");
+            limelight = hardwareMap.get(Limelight3A.class, "limelight");
             limelight.pipelineSwitch(0);
             //limelight.start();
             limelight.getStatus();
